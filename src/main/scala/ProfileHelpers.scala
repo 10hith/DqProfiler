@@ -138,19 +138,17 @@ object ProfileHelpers extends Utils{
     val histogram_DF = extractHistogramFromColumnProfileResult(result)
 
     // Join both numeric and nonNumeric datasets
-    val profiled_DF =
-      histogram_DF.
-        join(broadcast(numeric_DF), Seq("column_name"), "outer").
-        join(broadcast(nonNumeric_DF), Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
-        withColumn("distribution_available", expr("CASE WHEN histogram IS NULL THEN 0 ELSE 1 END"))
-
 //    val profiled_DF =
-//      numeric_DF.
-//        join(nonNumeric_DF, Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
-//        join(histogram_DF, Seq("column_name"), "outer").
+//      histogram_DF.
+//        join(broadcast(numeric_DF), Seq("column_name"), "outer").
+//        join(broadcast(nonNumeric_DF), Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
 //        withColumn("distribution_available", expr("CASE WHEN histogram IS NULL THEN 0 ELSE 1 END"))
-//
-//    profiled_DF
+
+    val profiled_DF =
+      broadcast(numeric_DF).
+        join(broadcast(nonNumeric_DF), Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
+        join(broadcast(histogram_DF), Seq("column_name"), "outer").
+        withColumn("distribution_available", expr("CASE WHEN histogram IS NULL THEN 0 ELSE 1 END"))
 
     profiled_DF
 
