@@ -46,5 +46,20 @@ trait Utils {
   }
   lazy val sc: SparkContext = spark.sparkContext
 
+  def with_double(df: DataFrame): DataFrame = {
+    df.selectExpr(
+      "column_name",
+      "data_type",
+      "num_distinct_values",
+      "CAST(completeness AS DOUBLE) AS completeness",
+      "CAST(1-completeness AS DOUBLE) AS percentage_missing",
+      "CAST(mean AS DOUBLE) AS mean",
+      "CAST(stdDev AS DOUBLE) AS standard_deviation",
+      "minimum",
+      "maximum",
+      "sum",
+      "column_type"
+    )
+  }
 
 }

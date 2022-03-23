@@ -16,17 +16,18 @@ object sampleProfie {
     val ipDF = spark.read
       .format("com.databricks.spark.csv")
       .option("header", "true")
-      .load(s"$currentDirectory/src/test/resources/testDataSet_1.csv")
+      .load(s"$currentDirectory/src/test/resources/dtypes.csv")
 
 
     spark.conf.getAll map (println(_))
 
-//    ipDF.show(200)
     ipDF.printSchema()
 
     val profiledDF = runProfile(ipDF)
 
+
     profiledDF.show(100)
+    profiledDF.printSchema()
 
   }
 }

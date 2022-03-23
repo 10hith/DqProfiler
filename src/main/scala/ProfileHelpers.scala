@@ -20,6 +20,7 @@ object ProfileHelpers extends Utils{
     val op = profile.asInstanceOf[NumericColumnProfile] match {
       case profile => (
         profile.column
+        ,profile.dataType
         ,profile.approximateNumDistinctValues
         ,profile.completeness
         ,profile.mean.getOrElse(-1.0)
@@ -45,7 +46,7 @@ object ProfileHelpers extends Utils{
         }
       }.
       toSeq.
-      toDF("column_name", "num_distinct_values", "completeness", "mean", "maximum", "minimum", "sum", "stdDev").
+      toDF("column_name", "data_type", "num_distinct_values", "completeness", "mean", "maximum", "minimum", "sum", "stdDev").
       withColumn("column_type", lit("numeric"))
   }
 
@@ -59,6 +60,7 @@ object ProfileHelpers extends Utils{
     val op = profile match {
       case profile => (
         profile.column,
+        profile.dataType,
         profile.approximateNumDistinctValues,
         profile.completeness
       )
@@ -74,7 +76,7 @@ object ProfileHelpers extends Utils{
         }
       }.
       toSeq.
-      toDF("column_name", "num_distinct_values", "completeness").
+      toDF("column_name", "data_type", "num_distinct_values", "completeness").
       withColumn("column_type", lit("non_numeric"))
   }
 
@@ -137,20 +139,14 @@ object ProfileHelpers extends Utils{
     // Extract ColumnProfile histogram values into DataFrame
     val histogram_DF = extractHistogramFromColumnProfileResult(result)
 
-    // Join both numeric and nonNumeric datasets
-//    val profiled_DF =
-//      histogram_DF.
-//        join(broadcast(numeric_DF), Seq("column_name"), "outer").
-//        join(broadcast(nonNumeric_DF), Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
-//        withColumn("distribution_available", expr("CASE WHEN histogram IS NULL THEN 0 ELSE 1 END"))
-
     val profiled_DF =
       broadcast(numeric_DF).
-        join(broadcast(nonNumeric_DF), Seq("column_name", "num_distinct_values", "completeness","column_type"), "outer").
+        join(broadcast(nonNumeric_DF), Seq("column_name", "data_type", "num_distinct_values", "completeness","column_type"), "outer").
+        transform(with_double).
         join(broadcast(histogram_DF), Seq("column_name"), "outer").
         withColumn("distribution_available", expr("CASE WHEN histogram IS NULL THEN 0 ELSE 1 END"))
 
-    profiled_DF
+    profiled_DF.withColumn("size", lit(result.numRecords))
 
   }
 
